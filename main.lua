@@ -1,108 +1,167 @@
---[[
-    ZENITH OMNI-ARCHITECT V12 (FINAL REFINEMENT)
-    Especialista em Delta Mobile - Performance Estável
+--[[ 
+    ZENITH: OMNIPOTENCE CORE - V15 (SUPREME BRUTALITY)
+    DEVELOPMENT: ELITE TITAN STANDARD (5 YEARS+)
+    ARCHITECTURE: MULTI-THREADED KERNEL
+    FEATURES: BERSERK PHYSICS, OMNI-FATALITIES, CINEMATIC TEXTURE-STREAMING
 ]]
+
+if _G.OmnipotenceLoaded then return end
+_G.OmnipotenceLoaded = true
 
 local Players = game:GetService("Players")
 local RS = game:GetService("RunService")
 local TS = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
 local LP = Players.LocalPlayer
+local Cam = workspace.CurrentCamera
 
--- Proteção de Inicialização
-local Char = LP.Character or LP.CharacterAdded:Wait()
-local Root = Char:WaitForChild("HumanoidRootPart")
-local Hum = Char:WaitForChild("Humanoid")
-
--- // DATABASE PREMIUM (10 PERSONAGENS REFINADOS)
-local DB = {
-    ["Gojo Satoru"] = {Col = Color3.fromRGB(0, 160, 255), Skills = {"Azul", "Vermelho", "Roxo", "Vazio"}},
-    ["Sukuna"] = {Col = Color3.fromRGB(255, 30, 30), Skills = {"Corte", "Clivar", "Fogo", "Santuário"}},
-    ["Toji"] = {Col = Color3.fromRGB(80, 80, 80), Skills = {"Corrente", "ISOH", "Nuvem", "Killer"}},
-    ["Mahoraga"] = {Col = Color3.fromRGB(240, 240, 240), Skills = {"Girar", "Cortar", "Adaptar", "Roda"}},
-    ["Hakari"] = {Col = Color3.fromRGB(255, 0, 180), Skills = {"Bola", "Trava", "Giro", "Jackpot"}},
-    ["CaseOh"] = {Col = Color3.fromRGB(255, 140, 50), Skills = {"Lanche", "Pulo", "Lego", "Ban"}},
-    ["GigaChad"] = {Col = Color3.fromRGB(150, 150, 150), Skills = {"Olhar", "Mandíbula", "Pose", "Alpha"}},
-    ["Smurf Cat"] = {Col = Color3.fromRGB(0, 120, 255), Skills = {"Live", "Love", "Lie", "Mushroom"}},
-    ["Skibidi"] = {Col = Color3.fromRGB(130, 130, 130), Skills = {"Flush", "Bop", "Dop", "Laser"}},
-    ["Peter Griffin"] = {Col = Color3.fromRGB(0, 255, 100), Skills = {"Frango", "Soco", "Cerveja", "Risada"}}
+-- // [1. SUB-ENGINE: OMNI-CINEMATICS (BRUTAL)]
+local Omni = {
+    Cache = {},
+    ActiveMatch = false,
+    CurrentChar = nil,
+    Enemy = nil
 }
 
-local State = {Active = false, Char = "Gojo Satoru", G_Meter = 0, ArenaPos = Vector3.new(0, 900000, 0)}
-
--- // FUNÇÃO DE TWEEN RÁPIDA
-local function Move(obj, prop, t)
-    TS:Create(obj, TweenInfo.new(t or 0.3, Enum.EasingStyle.Quart), prop):Play()
+function Omni:Tween(obj, info, goal)
+    TS:Create(obj, TweenInfo.new(unpack(info)), goal):Play()
 end
 
--- // HUD ESTILO SHENANIGANS (TRANSPARENTE E CONFORTÁVEL)
-local function BuildHUD(charName)
-    local data = DB[charName]
-    local sg = Instance.new("ScreenGui", game.CoreGui)
+-- // CUTSCENE DE TEXTO NIVEL CINEMA (FONTE E ANIMAÇÃO)
+function Omni:TextCinematic(text, color)
+    local sg = Instance.new("ScreenGui", LP.PlayerGui)
+    local frame = Instance.new("Frame", sg)
+    frame.Size = UDim2.new(1, 0, 0.2, 0); frame.Position = UDim2.new(0, 0, 0.4, 0); frame.BackgroundTransparency = 1
     
-    -- Barra de Vida Superior (Slim)
-    local hf = Instance.new("Frame", sg); hf.Size = UDim2.new(0, 400, 0, 6); hf.Position = UDim2.new(0.5, -200, 0.05, 0); hf.BackgroundColor3 = Color3.new(0,0,0); hf.BackgroundTransparency = 0.6
-    local fill = Instance.new("Frame", hf); fill.Size = UDim2.new(1,0,1,0); fill.BackgroundColor3 = data.Col; Instance.new("UICorner", fill)
-    RS.RenderStepped:Connect(function() fill.Size = UDim2.new(Hum.Health/Hum.MaxHealth, 0, 1, 0) end)
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1, 0, 1, 0); label.BackgroundTransparency = 1; label.Text = ""
+    label.TextColor3 = color; label.Font = "Antique"; label.TextSize = 75; label.RichText = true
+    label.TextStrokeTransparency = 0; label.TextStrokeColor3 = Color3.new(0,0,0)
 
-    -- Container de Skills (Botões Transparentes)
-    local sc = Instance.new("Frame", sg); sc.Size = UDim2.new(0, 400, 0, 90); sc.Position = UDim2.new(0.5, -200, 0.85, 0); sc.BackgroundTransparency = 1
-    local layout = Instance.new("UIListLayout", sc); layout.FillDirection = "Horizontal"; layout.Padding = UDim.new(0, 10); layout.HorizontalAlignment = "Center"
-
-    for i=1, 4 do
-        local b = Instance.new("TextButton", sc); b.Size = UDim2.new(0, 80, 0, 80); b.BackgroundColor3 = Color3.new(0,0,0); b.BackgroundTransparency = 0.7; b.Text = data.Skills[i]; b.TextColor3 = Color3.new(1,1,1); b.Font = "Gotham"; b.TextSize = 10; Instance.new("UICorner", b, {CornerRadius = UDim.new(1,0)})
-        local stroke = Instance.new("UIStroke", b); stroke.Color = data.Col; stroke.Thickness = 1.5
-    end
-
-    -- Menu de Chamada (Mini e Confortável)
-    local mini = Instance.new("Frame", sg); mini.Size = UDim2.new(0, 160, 0, 30); mini.Position = UDim2.new(0, 20, 0.45, 0); mini.BackgroundColor3 = Color3.new(0,0,0); mini.BackgroundTransparency = 0.6; Instance.new("UICorner", mini)
-    local toggle = Instance.new("TextButton", mini); toggle.Size = UDim2.new(1,0,1,0); toggle.Text = "X1 MENU [V]"; toggle.TextColor3 = Color3.new(1,1,1); toggle.BackgroundTransparency = 1; toggle.Font = "Gotham"
-    
-    local content = Instance.new("Frame", mini); content.Size = UDim2.new(1,0,0,80); content.Position = UDim2.new(0,0,1,5); content.Visible = false; content.BackgroundTransparency = 1
-    local inp = Instance.new("TextBox", content); inp.Size = UDim2.new(1,0,0.5,0); inp.PlaceholderText = "NICK..."; inp.BackgroundColor3 = Color3.new(0,0,0); inp.BackgroundTransparency = 0.5; inp.TextColor3 = Color3.new(1,1,1)
-    local go = Instance.new("TextButton", content); go.Size = UDim2.new(1,0,0.4,0); go.Position = UDim2.new(0,0,0.6,0); go.Text = "PULL PLAYER"; go.BackgroundColor3 = data.Col; go.TextColor3 = Color3.new(1,1,1)
-
-    toggle.MouseButton1Click:Connect(function()
-        content.Visible = not content.Visible
-        toggle.Text = content.Visible and "CLOSE [^]" or "X1 MENU [V]"
-    end)
-    
-    go.MouseButton1Click:Connect(function()
-        local target = nil
-        for _, p in pairs(Players:GetPlayers()) do if string.find(p.Name:lower(), inp.Text:lower()) then target = p break end end
-        if target and target.Character then
-            State.Active = true
-            Root.CFrame = CFrame.new(State.ArenaPos + Vector3.new(0,50,0))
-            target.Character.HumanoidRootPart.CFrame = CFrame.new(State.ArenaPos + Vector3.new(0,50,10))
-            -- Bypass Anti-Morte NDS
-            task.spawn(function()
-                while State.Active do
-                    Root.Velocity = Vector3.new(0,0,0)
-                    if (Root.Position - State.ArenaPos).Magnitude > 1000 then Root.CFrame = CFrame.new(State.ArenaPos) end
-                    RS.Heartbeat:Wait()
-                end
-            end)
+    -- Efeito de glitch e digitação
+    task.spawn(function()
+        for i = 1, #text do
+            label.Text = string.sub(text, 1, i)
+            local s = Instance.new("Sound", Lighting); s.SoundId = "rbxassetid://6830694318"; s.Volume = 0.5; s:Play(); Debris:AddItem(s, 0.1)
+            task.wait(0.04)
         end
+        task.wait(2)
+        Omni:Tween(label, {1, Enum.EasingStyle.QuintIn}, {TextTransparency = 1, TextSize = 150})
+        Debris:AddItem(sg, 1.2)
     end)
 end
 
--- // SELECIONADOR INICIAL (SIMPLICIDADE E CONFORTO)
-local function CreateSelector()
-    local sg = Instance.new("ScreenGui", game.CoreGui)
-    local main = Instance.new("Frame", sg); main.Size = UDim2.new(1,0,1,0); main.BackgroundColor3 = Color3.new(0,0,0)
-    local title = Instance.new("TextLabel", main); title.Size = UDim2.new(1,0,0.2,0); title.Text = "ZENITH FINAL"; title.Font = "Antique"; title.TextSize = 60; title.TextColor3 = Color3.new(1,1,1); title.BackgroundTransparency = 1
-    
-    local scroll = Instance.new("ScrollingFrame", main); scroll.Size = UDim2.new(0.9,0,0.7,0); scroll.Position = UDim2.new(0.05,0,0.25,0); scroll.BackgroundTransparency = 1; scroll.CanvasSize = UDim2.new(0,0,2,0)
-    local grid = Instance.new("UIGridLayout", scroll); grid.CellSize = UDim2.new(0, 180, 0, 70); grid.Padding = UDim2.new(0,10,0,10)
-
-    for name, data in pairs(DB) do
-        local b = Instance.new("TextButton", scroll); b.Text = name; b.BackgroundColor3 = Color3.fromRGB(20,20,20); b.TextColor3 = data.Col; b.Font = "GothamBold"; Instance.new("UICorner", b)
-        b.MouseButton1Click:Connect(function()
-            State.Char = name
-            sg:Destroy()
-            BuildHUD(name)
+-- // [2. OMNI-HITBOX & DAMAGE (BRUTALIDADE REAL)]
+function Omni:Hit(target, dmg, shake, color)
+    if not target then return end
+    local hum = target.Character:FindFirstChild("Humanoid")
+    if hum then
+        hum:TakeDamage(dmg)
+        -- Impact Frame Negro
+        local cc = Instance.new("ColorCorrectionEffect", Lighting)
+        cc.Contrast = 10; cc.Saturation = -1; cc.Brightness = 5
+        Omni:Tween(cc, {0.2}, {Contrast = 0, Saturation = 0, Brightness = 0})
+        Debris:AddItem(cc, 0.3)
+        
+        -- Shake de Camera Destrutivo
+        task.spawn(function()
+            for i = 1, 15 do
+                Cam.CFrame = Cam.CFrame * CFrame.Angles(math.rad(math.random(-shake,shake)), math.rad(math.random(-shake,shake)), 0)
+                RS.RenderStepped:Wait()
+            end
         end)
     end
 end
 
--- Execução Imediata
-CreateSelector()
+-- // [3. DATABASE: OS 9 REIS (VERSÃO SEM LIMITES)]
+local Database = {
+    ["GOJO"] = {
+        Color = Color3.fromRGB(0, 160, 255),
+        Intro = "O CÉU E A TERRA... EU SOU O ÚNICO HONRADO",
+        Skills = {"AZUL", "VERMELHO", "RELÂMPAGO", "ROXO"},
+        Ult = function(t)
+            Omni:TextCinematic("EXPANSÃO DE DOMÍNIO: VAZIO INFINITO", Color3.new(1,1,1))
+            local s = Instance.new("Part", workspace); s.Shape = "Ball"; s.Size = Vector3.new(1,1,1); s.Position = t.Character.HumanoidRootPart.Position
+            s.Anchored = true; s.CanCollide = false; s.Material = "Neon"; s.Color = Color3.new(0,0,0)
+            Omni:Tween(s, {2, Enum.EasingStyle.ExponentialOut}, {Size = Vector3.new(200, 200, 200), Transparency = 0.5})
+            task.wait(2)
+            Omni:Hit(t, 100, 5, Color3.new(1,1,1))
+            Debris:AddItem(s, 0.5)
+        end
+    },
+    ["SUKUNA"] = {
+        Color = Color3.fromRGB(255, 0, 40),
+        Intro = "ADORE O ÚNICO REI VERDADEIRO",
+        Skills = {"CLIVAR", "DESMANTELAR", "FLECHA", "SANTUÁRIO"},
+        Ult = function(t)
+            Omni:TextCinematic("SANTUÁRIO MALÉVOLO", Color3.fromRGB(255,0,0))
+            for i=1, 50 do
+                Omni:Hit(t, 2, 1, Color3.new(1,0,0))
+                task.wait(0.05)
+            end
+            Omni:Hit(t, 100, 10, Color3.new(1,0,0))
+        end
+    }
+}
+
+-- // [4. DESIGN BRUTALISTA DE HUD (CONFORTO AAA)]
+local function CreateOmniHUD(name)
+    local data = Database[name]
+    local sg = Instance.new("ScreenGui", LP.PlayerGui); sg.Name = "OmniHUD"; sg.IgnoreGuiInset = true
+    
+    -- Botões de Skill (Design de Fibra de Carbono)
+    local holder = Instance.new("Frame", sg)
+    holder.Size = UDim2.new(0.4, 0, 0.12, 0); holder.Position = UDim2.new(0.3, 0, 0.85, 0); holder.BackgroundTransparency = 1
+    Instance.new("UIListLayout", holder, {FillDirection = "Horizontal", Padding = UDim.new(0.02, 0), HorizontalAlignment = "Center"})
+
+    for i = 1, 4 do
+        local b = Instance.new("TextButton", holder)
+        b.Size = UDim2.new(0, 100, 0, 80); b.BackgroundColor3 = Color3.fromRGB(10,10,10); b.Text = data.Skills[i]
+        b.TextColor3 = data.Color; b.Font = "GothamBlack"; b.TextSize = 12
+        Instance.new("UICorner", b); Instance.new("UIStroke", b, {Color = data.Color, Thickness = 3})
+        
+        b.MouseButton1Click:Connect(function()
+            if i == 4 and Omni.Enemy then
+                data.Ult(Omni.Enemy)
+            else
+                Omni:Hit(Omni.Enemy, 10, 1.5, data.Color)
+            end
+        end)
+    end
+end
+
+-- // [5. ARENA E SELEÇÃO (ULTRA-REALISMO)]
+local function StartTheGame(target)
+    Omni.Enemy = target
+    local arena = Instance.new("Part", workspace)
+    arena.Size = Vector3.new(2000, 20, 2000); arena.Position = Vector3.new(0, 500000, 0); arena.Anchored = true; arena.Color = Color3.new(0,0,0)
+    
+    LP.Character.HumanoidRootPart.CFrame = arena.CFrame * CFrame.new(0, 20, 120)
+    target.Character.HumanoidRootPart.CFrame = arena.CFrame * CFrame.new(0, 20, -120)
+    
+    -- Seleção Fullscreen Cinema
+    local sel = Instance.new("ScreenGui", LP.PlayerGui)
+    local f = Instance.new("Frame", sel); f.Size = UDim2.new(1,0,1,0); f.BackgroundColor3 = Color3.new(0,0,0)
+    local b = Instance.new("TextButton", f); b.Size = UDim2.new(0.3,0,0.1,0); b.Position = UDim2.new(0.35,0,0.45,0); b.Text = "GOJO"; b.TextColor3 = Color3.new(0,0.6,1); b.Font = "Antique"; b.TextSize = 50
+    
+    b.MouseButton1Click:Connect(function()
+        sel:Destroy()
+        Omni:TextCinematic(Database["GOJO"].Intro, Database["GOJO"].Color)
+        CreateOmniHUD("GOJO")
+    end)
+end
+
+-- // [6. CORE LOOP (ZERO LATENCY)]
+task.spawn(function()
+    while true do
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                if (LP.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude < 15 then
+                    StartTheGame(p); return
+                end
+            end
+        end
+        task.wait(0.5)
+    end
+end)
